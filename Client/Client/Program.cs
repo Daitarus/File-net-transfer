@@ -9,40 +9,68 @@ namespace Client
     {
         static int Main(string[] args)
         {
+            string[] args1 = new string[5];
+            args1[0] = "127.0.0.1";
+            args1[1] = "4000";
+            args1[2] = "5000";
+            args1[3] = "fgf";
+            args1[4] = "500";
             //проверка параметров
-            if (args.Length != 5)
+            if (args1.Length != 5)
             {
                 Console.WriteLine("Ошибка: Не верное колличество параметров !!!");
                 return -1;
             }
             //преобразование параметров в нужный тип
-            IPAddress ip = IPAddress.Parse("127.0.0.1"); int port_Tcp = 0, port_Udp=0, time=0; string file_temp;
+            int time=0; string filename;
             try
             {
-                ip = IPAddress.Parse(args[0]);
-                port_Tcp = Convert.ToInt32(args[1]);
-                port_Udp = Convert.ToInt32(args[2]);
-                file_temp = args[3];
-                time = Convert.ToInt32(args[4]);
+                TcpIp.ip = IPAddress.Parse(args1[0]);
+                TcpIp.port_tcp = Convert.ToInt32(args1[1]);
+                TcpIp.port_udp = Convert.ToInt32(args1[2]);
+                filename = args1[3];
+                time = Convert.ToInt32(args1[4]);
             }
             catch
             {
                 Console.WriteLine("Ошибка: Параметры введены неверно !!!");
                 return -1;
             }
-            Console.WriteLine($"{ip} {port_Tcp} {port_Udp} {file_temp} {time}");
             //подключение TCP
-            IPEndPoint ipPoint = new IPEndPoint(ip, port_Tcp);
-            Socket socket_Tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            try
+            if(TcpIp.Connection())
             {
-                socket_Tcp.Connect(ipPoint);
-                Console.WriteLine("Подключено !!!");
+                Console.WriteLine("Подключено...");
             }
-            catch
+            else
             {
                 Console.WriteLine("Ошибка подключения !!!");
+                return -1;
             }
+            //отправка имени файла и порта для udp
+            if(TcpIp.SendMessageTcp($"{filename}:{TcpIp.port_udp}"))
+            {
+                Console.WriteLine("Имя файла и номер порта для UDP отправленны...");
+            }
+            else
+            {
+                Console.WriteLine("Ошибка подключения !!!");
+                return -1;
+            }
+
+            Thread.Sleep(5000);
+            //отправка сообщения udp
+            if(TcpIp.SendMessageUdp("Новое сообщение!!!"))
+            {
+                Console.WriteLine("Сообщение отправленно...");
+            }
+            else
+            {
+                Console.WriteLine("Ошибка подключения !!!");
+                return -1;
+            }
+
+            TcpIp.Close(false);
+            TcpIp.Close(true);
             return 0;
         }
     }

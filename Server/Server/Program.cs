@@ -9,6 +9,10 @@ namespace Server
     {
         static int Main(string[] args)
         {
+            args = new string[3];
+            args[0] = "127.0.0.1";
+            args[1] = "4000";
+            args[2] = "sdf";
             //проверка параметров
             if(args.Length != 3)
             {
@@ -16,11 +20,11 @@ namespace Server
                 return -1;
             }
             //преобразование параметров в нужный тип
-            string temp; IPAddress ip = IPAddress.Parse("127.0.0.1"); int port = 0;
+            string temp;
             try
             {
-                ip = IPAddress.Parse(args[0]);
-                port = Convert.ToInt32(args[1]);
+                TcpIp.ip = IPAddress.Parse(args[0]);
+                TcpIp.port_tcp = Convert.ToInt32(args[1]);
                 temp = args[2];
             }
             catch
@@ -28,27 +32,53 @@ namespace Server
                 Console.WriteLine("Ошибка: Параметры введены неверно !!!");
                 return -1;
             }
-            //создание сокета и прослушивание на подключение
-            Socket socket_Tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            IPEndPoint ipPoint = new IPEndPoint(ip, port);
-            try
+            //создание сокета tcp, прослушивание и подключение
+            Console.WriteLine("Сервер запущен...");
+            if(TcpIp.GetConnection())
             {
-                socket_Tcp.Bind(ipPoint);
-                socket_Tcp.Listen(1);
-                Console.WriteLine("Ожидание поключения ...");
-                socket_Tcp.Accept();
+                Console.WriteLine("Новое подключение...");
             }
-            catch
+            else
             {
-                Console.WriteLine("Ошибка соединения !!!");
+                Console.WriteLine("Ошибка подключения !!!");
                 return -1;
             }
-            Console.WriteLine("Новое подключение !!!");
-            
+            //получение имени файла и номера порт для udp
+            string message;
+            if (TcpIp.ReadTcp(out message))
+            {
+                string filename;
+                try
+                {
+                    filename = message.Substring(0, message.IndexOf(":"));
+                    TcpIp.port_udp = Convert.ToInt32(message.Substring(message.IndexOf(":") + 1, message.Length - message.IndexOf(":") - 1));
+
+                }
+                catch
+                {
+                    Console.WriteLine("Ошибка: Данные о UDP подключении переданны не верно !!!");
+                    return -1;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Ошибка подключения !!!");
+                return -1;
+            }
+            //получение сообщения по UDP
+            if (TcpIp.ReadUdp(out message))
+            {
+                Console.WriteLine(message);
+            }
+            else
+            {
+                Console.WriteLine("Ошибка подключения !!!");
+                return -1;
+            }
             Console.ReadLine();
-            socket_Tcp.Shutdown(SocketShutdown.Both);
-            socket_Tcp.Close();
+            TcpIp.Close(false);
+            TcpIp.Close(true); ;
             return 0;
-        }
+        }       
     }
 }
