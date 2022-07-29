@@ -13,3 +13,6 @@ D:\My Project\NetWork\z1\Server\Server\obj\Debug\net6.0\refint\Server.dll
 D:\My Project\NetWork\z1\Server\Server\obj\Debug\net6.0\Server.pdb
 D:\My Project\NetWork\z1\Server\Server\obj\Debug\net6.0\Server.genruntimeconfig.cache
 D:\My Project\NetWork\z1\Server\Server\obj\Debug\net6.0\ref\Server.dll
+D:\My Project\NetWork\z1\Server\Server\bin\Debug\net6.0\TcpIpLib.dll
+D:\My Project\NetWork\z1\Server\Server\bin\Debug\net6.0\TcpIpLib.pdb
+D:\My Project\NetWork\z1\Server\Server\obj\Debug\net6.0\Server.csproj.CopyComplete

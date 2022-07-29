@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using TcpIpLib;
 
 namespace Server
 {
@@ -21,10 +22,11 @@ namespace Server
             }
             //преобразование параметров в нужный тип
             string temp;
+            TcpIp tcpIp = new TcpIp();
             try
             {
-                TcpIp.ip = IPAddress.Parse(args[0]);
-                TcpIp.port_tcp = Convert.ToInt32(args[1]);
+                tcpIp.ip = IPAddress.Parse(args[0]);
+                tcpIp.port_tcp = Convert.ToInt32(args[1]);
                 temp = args[2];
             }
             catch
@@ -34,53 +36,62 @@ namespace Server
             }
             //создание сокета tcp, прослушивание и подключение
             Console.WriteLine("Сервер запущен...");
-            if(TcpIp.GetConnection())
+            if(tcpIp.GetConnection())
             {
                 Console.WriteLine("Новое подключение...");
             }
             else
             {
-                Console.WriteLine("Ошибка подключения !!!");
+                Close("Ошибка подключения !!!", tcpIp);
                 return -1;
             }
             //получение имени файла и номера порт для udp
             string message;
-            if (TcpIp.ReadTcp(out message))
+            if (tcpIp.ReadTcp(out message))
             {
                 string filename;
                 try
                 {
                     filename = message.Substring(0, message.IndexOf(":"));
-                    TcpIp.port_udp = Convert.ToInt32(message.Substring(message.IndexOf(":") + 1, message.Length - message.IndexOf(":") - 1));
+                    tcpIp.port_udp = Convert.ToInt32(message.Substring(message.IndexOf(":") + 1, message.Length - message.IndexOf(":") - 1));
 
                 }
                 catch
                 {
-                    Console.WriteLine("Ошибка: Данные о UDP подключении переданны не верно !!!");
+                    Close("Ошибка: Данные о UDP подключении переданны не верно !!!", tcpIp);
                     return -1;
                 }
             }
             else
             {
-                Console.WriteLine("Ошибка подключения !!!");
+                Close("Ошибка: Отсутствует соединение !!!", tcpIp);
                 return -1;
             }
             //получение сообщения по UDP
-            if (TcpIp.ReadUdp(out message))
+            if (tcpIp.ReadUdp(out message))
             {
                 Console.WriteLine(message);
                 //отправляем сообщение о получении сообщения
-                TcpIp.SendMessageTcp("ok");
+                if(tcpIp.SendMessageTcp("ok"))
+                {
+                    Console.WriteLine("Подтверждение отправленно...");
+                }
             }
             else
             {
-                Console.WriteLine("Ошибка подключения !!!");
+                Close("Ошибка: Отсутствует соединение !!!", tcpIp);
                 return -1;
             }
             Console.ReadLine();
-            TcpIp.Close(false);
-            TcpIp.Close(true); ;
+            Close("Сервер отключён !", tcpIp);
             return 0;
-        }       
+        }      
+        
+        static void Close(string message, TcpIp tcpIp)
+        {
+            Console.WriteLine(message);
+            tcpIp.Close(false);
+            tcpIp.Close(true);
+        }
     }
 }

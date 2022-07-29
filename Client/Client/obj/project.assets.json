@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net6.0": {}
+    "net6.0": {
+      "TcpIpLib/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v6.0",
+        "compile": {
+          "bin/placeholder/TcpIpLib.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/TcpIpLib.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "TcpIpLib/1.0.0": {
+      "type": "project",
+      "path": "../../TcpIpLib/TcpIpLib/TcpIpLib.csproj",
+      "msbuildProject": "../../TcpIpLib/TcpIpLib/TcpIpLib.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net6.0": []
+    "net6.0": [
+      "TcpIpLib >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\Pavel\\.nuget\\packages\\": {},
@@ -38,7 +57,11 @@
       "frameworks": {
         "net6.0": {
           "targetAlias": "net6.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\My Project\\NetWork\\z1\\TcpIpLib\\TcpIpLib\\TcpIpLib.csproj": {
+              "projectPath": "D:\\My Project\\NetWork\\z1\\TcpIpLib\\TcpIpLib\\TcpIpLib.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

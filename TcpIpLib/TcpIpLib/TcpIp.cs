@@ -3,26 +3,23 @@ using System.Net.Sockets;
 using System.Net;
 using System.Text;
 
-namespace Server
+namespace TcpIpLib
 {
     public class TcpIp
     {
-        public static IPAddress ip = IPAddress.Parse("127.0.0.1");
-        public static int port_tcp;
-        public static int port_udp;
+        public IPAddress ip = IPAddress.Parse("127.0.0.1");
+        public int port_tcp;
+        public int port_udp;
 
-        private static StringBuilder message = new StringBuilder();
-        private static int bytes = 0;
-        private static byte[] buffer = new byte[256];
+        private int mtu = 256;
 
-        private static Socket socket_Tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private static Socket socket_Udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        private static IPEndPoint ipPoint = new IPEndPoint(IPAddress.Any, 0);
+        private Socket socket_Tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        private Socket socket_Udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
 
-        public static bool GetConnection()
+        public bool GetConnection()
         {
-            ipPoint = new IPEndPoint(ip, port_tcp);
+            IPEndPoint ipPoint = new IPEndPoint(ip, port_tcp);
             try
             {
                 socket_Tcp.Bind(ipPoint);
@@ -36,9 +33,9 @@ namespace Server
                 return false;
             }
         }
-        public static bool Connection()
+        public bool Connection()
         {
-            ipPoint = new IPEndPoint(ip, port_tcp);
+            IPEndPoint ipPoint = new IPEndPoint(ip, port_tcp);
             try
             {
                 socket_Tcp.Connect(ipPoint);
@@ -49,9 +46,11 @@ namespace Server
                 return false;
             }
         }
-        public static bool ReadTcp(out string str)
+        public bool ReadTcp(out string str)
         {
-            message = new StringBuilder();
+            StringBuilder message = new StringBuilder();
+            int bytes = 0;
+            byte[] buffer = new byte[mtu];
             try
             {
                 do
@@ -69,8 +68,9 @@ namespace Server
                 return false;
             }
         }
-        public static bool SendMessageTcp(string str)
+        public bool SendMessageTcp(string str)
         {
+            byte[] buffer = new byte[mtu];
             try
             {
                 buffer = Encoding.Unicode.GetBytes(str);
@@ -82,10 +82,12 @@ namespace Server
                 return false;
             }
         }
-        public static bool ReadUdp(out string str)
+        public bool ReadUdp(out string str)
         {
-            message = new StringBuilder();
-            ipPoint = new IPEndPoint(ip, port_udp);
+            StringBuilder message = new StringBuilder();
+            int bytes = 0;
+            byte[] buffer = new byte[mtu];
+            IPEndPoint ipPoint = new IPEndPoint(ip, port_udp);
             EndPoint getIpPoint = new IPEndPoint(IPAddress.Any, 0);
             socket_Udp.Bind(ipPoint);
             try
@@ -105,12 +107,13 @@ namespace Server
                 return false;
             }
         }
-        public static bool SendMessageUdp(string str)
+        public bool SendMessageUdp(string str)
         {
+            byte[] buffer = new byte[mtu];
             try
             {
                 buffer = Encoding.Unicode.GetBytes(str);
-                ipPoint = new IPEndPoint(ip, port_udp);
+                IPEndPoint ipPoint = new IPEndPoint(ip, port_udp);
                 socket_Udp.SendTo(buffer, ipPoint);
                 return true;
             }
@@ -119,7 +122,7 @@ namespace Server
                 return false;
             }
         }
-        public static bool Close(bool key)
+        public bool Close(bool key)
         {
             try
             {
