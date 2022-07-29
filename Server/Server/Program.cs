@@ -69,6 +69,8 @@ namespace Server
             if (TcpIp.ReadUdp(out message))
             {
                 Console.WriteLine(message);
+                //отправляем сообщение о получении сообщения
+                TcpIp.SendMessageTcp("ok");
             }
             else
             {

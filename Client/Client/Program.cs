@@ -7,6 +7,7 @@ namespace Client
 {
     internal class Program
     {
+        static bool flag = true;
         static int Main(string[] args)
         {
             string[] args1 = new string[5];
@@ -14,7 +15,7 @@ namespace Client
             args1[1] = "4000";
             args1[2] = "5000";
             args1[3] = "fgf";
-            args1[4] = "500";
+            args1[4] = "5000";
             //проверка параметров
             if (args1.Length != 5)
             {
@@ -57,21 +58,43 @@ namespace Client
                 return -1;
             }
 
-            Thread.Sleep(5000);
-            //отправка сообщения udp
-            if(TcpIp.SendMessageUdp("Новое сообщение!!!"))
+            //udp
+            //Thread.Sleep(5000);
+            string mess;
+            SendMess(time);
+            if(TcpIp.ReadTcp(out mess))
             {
-                Console.WriteLine("Сообщение отправленно...");
-            }
-            else
-            {
-                Console.WriteLine("Ошибка подключения !!!");
-                return -1;
+                if(mess=="ok")
+                {
+                    flag = false;
+                }
             }
 
             TcpIp.Close(false);
             TcpIp.Close(true);
             return 0;
         }
+
+        static async void SendMess(int time)
+        {
+            await Task.Run(async () =>
+            {
+                while (flag)
+                {
+                    //отправка сообщения udp
+                    if (TcpIp.SendMessageUdp("Новое сообщение!!!"))
+                    {
+                        Console.WriteLine("Сообщение отправленно...");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Ошибка подключения !!!");
+                        flag = false;
+                    }
+                    Thread.Sleep(time);
+                }
+            });
+        }
+
     }
 }

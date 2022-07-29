@@ -69,6 +69,26 @@ namespace Client
                 return false;
             }
         }
+
+        public static string ReadTcp()
+        {
+            message = new StringBuilder();
+            try
+            {
+                do
+                {
+                    bytes = socket_Tcp.Receive(buffer);
+                    message.Append(Encoding.Unicode.GetString(buffer, 0, bytes));
+                }
+                while (socket_Tcp.Available > 0);
+                return message.ToString();
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
         public static bool SendMessageTcp(string str)
         {
             try
