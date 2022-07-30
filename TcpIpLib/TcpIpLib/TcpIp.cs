@@ -13,19 +13,19 @@ namespace TcpIpLib
 
         private int mtu = 256;
 
-        private Socket socket_Tcp = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        private Socket socket_Udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        private TcpClient tcpClient;
+        private TcpListener tcpServer;
+        private NetworkStream tcpStream;
 
 
         public bool GetConnection()
         {
-            IPEndPoint ipPoint = new IPEndPoint(ip, port_tcp);
+            tcpServer = new TcpListener(ip, port_tcp);
             try
             {
-                socket_Tcp.Bind(ipPoint);
-                socket_Tcp.Listen(1);
-
-                socket_Tcp = socket_Tcp.Accept();
+                tcpServer.Start();
+                tcpClient = tcpServer.AcceptTcpClient();
+                tcpStream = tcpClient.GetStream();
                 return true;
             }
             catch
@@ -35,10 +35,11 @@ namespace TcpIpLib
         }
         public bool Connection()
         {
-            IPEndPoint ipPoint = new IPEndPoint(ip, port_tcp);
+            tcpClient = new TcpClient();
             try
             {
-                socket_Tcp.Connect(ipPoint);
+                tcpClient.Connect(ip, port_tcp);
+                tcpStream = tcpClient.GetStream();
                 return true;
             }
             catch
@@ -49,16 +50,16 @@ namespace TcpIpLib
         public bool ReadTcp(out string str)
         {
             StringBuilder message = new StringBuilder();
-            int bytes = 0;
+            int bytes;
             byte[] buffer = new byte[mtu];
             try
             {
                 do
                 {
-                    bytes = socket_Tcp.Receive(buffer);
-                    message.Append(Encoding.Unicode.GetString(buffer, 0, bytes));
+                    bytes = tcpStream.Read(buffer, 0, buffer.Length);
+                    message.Append(Encoding.UTF8.GetString(buffer, 0, bytes));
                 }
-                while (socket_Tcp.Available > 0);
+                while (tcpStream.DataAvailable);
                 str = message.ToString();
                 return true;
             }
@@ -70,11 +71,10 @@ namespace TcpIpLib
         }
         public bool SendMessageTcp(string str)
         {
-            byte[] buffer = new byte[mtu];
             try
             {
-                buffer = Encoding.Unicode.GetBytes(str);
-                socket_Tcp.Send(buffer);
+                byte[] buffer = Encoding.UTF8.GetBytes(str);
+                tcpStream.Write(buffer, 0, buffer.Length);
                 return true;
             }
             catch
@@ -84,21 +84,13 @@ namespace TcpIpLib
         }
         public bool ReadUdp(out string str)
         {
-            StringBuilder message = new StringBuilder();
-            int bytes = 0;
-            byte[] buffer = new byte[mtu];
-            IPEndPoint ipPoint = new IPEndPoint(ip, port_udp);
-            EndPoint getIpPoint = new IPEndPoint(IPAddress.Any, 0);
-            socket_Udp.Bind(ipPoint);
+            UdpClient udpClient = new UdpClient(port_udp);
+            IPEndPoint ipPoint = null;
             try
             {
-                do
-                {
-                    bytes = socket_Udp.ReceiveFrom(buffer, ref getIpPoint);
-                    message.Append(Encoding.Unicode.GetString(buffer, 0, bytes));
-                }
-                while (socket_Udp.Available > 0);
-                str = message.ToString();
+                byte[] buffer = udpClient.Receive(ref ipPoint);
+                str = Encoding.UTF8.GetString(buffer);
+                udpClient.Close();
                 return true;
             }
             catch
@@ -109,12 +101,12 @@ namespace TcpIpLib
         }
         public bool SendMessageUdp(string str)
         {
-            byte[] buffer = new byte[mtu];
             try
             {
-                buffer = Encoding.Unicode.GetBytes(str);
-                IPEndPoint ipPoint = new IPEndPoint(ip, port_udp);
-                socket_Udp.SendTo(buffer, ipPoint);
+                UdpClient udpClient = new UdpClient();
+                byte[] buffer = Encoding.UTF8.GetBytes(str);
+                udpClient.Send(buffer, buffer.Length, ip.ToString(), port_udp);
+                udpClient.Close();
                 return true;
             }
             catch
@@ -122,19 +114,21 @@ namespace TcpIpLib
                 return false;
             }
         }
-        public bool Close(bool key)
+        public bool Close()
         {
             try
             {
-                if (key)
+                if (tcpClient != null)
                 {
-                    socket_Tcp.Shutdown(SocketShutdown.Both);
-                    socket_Tcp.Close();
+                    tcpClient.Close();
                 }
-                else
+                if (tcpStream != null)
                 {
-                    socket_Udp.Shutdown(SocketShutdown.Both);
-                    socket_Udp.Close();
+                    tcpStream.Close();
+                }
+                if (tcpServer != null)
+                {
+                    tcpServer.Stop();
                 }
                 return true;
             }

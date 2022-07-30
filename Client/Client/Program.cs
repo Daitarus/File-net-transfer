@@ -12,14 +12,14 @@ namespace Client
 
         static int Main(string[] args)
         {
-            string[] args1 = new string[5];
-            args1[0] = "127.0.0.1";
-            args1[1] = "4000";
-            args1[2] = "5000";
-            args1[3] = "fgf";
-            args1[4] = "500";
+            args = new string[5];
+            args[0] = "127.0.0.1";
+            args[1] = "4000";
+            args[2] = "5000";
+            args[3] = "test.txt";
+            args[4] = "500";
             //проверка параметров
-            if (args1.Length != 5)
+            if (args.Length != 5)
             {
                 Console.WriteLine("Ошибка: Не верное колличество параметров !!!");
                 return -1;
@@ -28,11 +28,11 @@ namespace Client
             int time=0; string filename; TcpIp tcpIp = new TcpIp();
             try
             {
-                tcpIp.ip = IPAddress.Parse(args1[0]);
-                tcpIp.port_tcp = Convert.ToInt32(args1[1]);
-                tcpIp.port_udp = Convert.ToInt32(args1[2]);
-                filename = args1[3];
-                time = Convert.ToInt32(args1[4]);
+                tcpIp.ip = IPAddress.Parse(args[0]);
+                tcpIp.port_tcp = Convert.ToInt32(args[1]);
+                tcpIp.port_udp = Convert.ToInt32(args[2]);
+                filename = args[3];
+                time = Convert.ToInt32(args[4]);
             }
             catch
             {
@@ -63,6 +63,9 @@ namespace Client
             //udp
             string mess;
             SendMess(time, tcpIp);
+            //проверка на присутствие tcp соединения
+            //.......................................
+            //
             if(tcpIp.ReadTcp(out mess))
             {
                 if(mess == "ok")
@@ -100,8 +103,7 @@ namespace Client
         static void Close(string message, TcpIp tcpIp)
         {
             Console.WriteLine(message);
-            tcpIp.Close(false);
-            tcpIp.Close(true);
+            tcpIp.Close();
         }
 
     }
