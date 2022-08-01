@@ -8,6 +8,10 @@ namespace Server
 {
     internal class Program
     {
+        static bool flag = true;
+        static string[] strCon = new string[5];
+        static TcpIp tcpIp;
+
         static int Main(string[] args)
         {
             args = new string[3];
@@ -20,99 +24,167 @@ namespace Server
                 Console.WriteLine("Ошибка: Не верное колличество параметров !!!");
                 return -1;
             }
+            tcpIp = new TcpIp();
             //преобразование параметров в нужный тип
-            string temp;
-            TcpIp tcpIp = new TcpIp();
             try
             {
                 tcpIp.ip = IPAddress.Parse(args[0]);
                 tcpIp.port_tcp = Convert.ToInt32(args[1]);
-                temp = args[2];
+                //temp = args[2];
             }
             catch
             {
                 Console.WriteLine("Ошибка: Параметры введены неверно !!!");
                 return -1;
             }
-            while (true)
+            //старт работы сервера
+            ConsoleUpdate();
+            strCon[0] = "Сервер запущен...";
+            NetWork();
+            //команда на завершение работы
+            string com = "";
+            while (com!="exit")
             {
-                //создание сокета tcp, прослушивание и подключение
-                Console.WriteLine("Сервер запущен...");
-                if (tcpIp.GetConnection())
+                strCon[4] = "Если вы хотите завершить работу сервера - введите exit: ";
+                com = Console.ReadLine();
+                if (com == "exit")
                 {
-                    Console.WriteLine("Новое подключение...");
-                }
-                else
-                {
-                    Close("Ошибка подключения !!!", tcpIp);
-                    return -1;
-                }
-                //получение имени файла и номера порт для udp
-                string message; string filename = "";
-                if (tcpIp.ReadTcp(out message))
-                {
-                    try
+                    strCon[4] = "Вы уверены, что хотите завершить работу сервера? (yes/no): ";
+                    com = Console.ReadLine();
+                    if((string.Equals(com, "yes", StringComparison.OrdinalIgnoreCase))||(string.Equals(com, "y", StringComparison.OrdinalIgnoreCase)))
                     {
-                        filename = message.Substring(0, message.IndexOf(":"));
-                        tcpIp.port_udp = Convert.ToInt32(message.Substring(message.IndexOf(":") + 1, message.Length - message.IndexOf(":") - 1));
-
-                    }
-                    catch
-                    {
-                        Close("Ошибка: Данные о UDP подключении переданны не верно !!!", tcpIp);
-                        return -1;
+                        com = "exit";
                     }
                 }
-                else
-                {
-                    Close("Ошибка: Отсутствует соединение !!!", tcpIp);
-                    return -1;
-                }
-                //создание файла
-                FileWork fileWork = new FileWork();
-                if (fileWork.CreateDir(temp))
-                {
-                    Console.WriteLine("Директория создана...");
-                }
-                else
-                {
-                    Close("Директория не может быть создана по указанному пути", tcpIp);
-                    return -1;
-                }
-                if (fileWork.CreateFile(temp, filename))
-                {
-                    Console.WriteLine("Файл создан...");
-                }
-                else
-                {
-                    Close("Файл не может быть создан по указанному пути", tcpIp);
-                    return -1;
-                }
-                //получение сообщения по UDP
-                if (tcpIp.ReadUdp(out message))
-                {
-                    Console.WriteLine(message);
-                    //отправляем сообщение о получении сообщения
-                    if (tcpIp.SendMessageTcp("ok"))
-                    {
-                        Console.WriteLine("Подтверждение отправленно...");
-                    }
-                }
-                else
-                {
-                    Close("Ошибка: Отсутствует соединение !!!", tcpIp);
-                    return -1;
-                }
-                //Console.ReadLine();
-                Close("Сервер отключён !", tcpIp);
             }
+            flag = false;
             return 0;
         }      
-        
-        static void Close(string message, TcpIp tcpIp)
+       
+        static async void NetWork()
         {
-            Console.WriteLine(message);
-            tcpIp.Close();
+            string message, filename;
+            bool flagConnection = false;
+            await Task.Run(async () =>
+            {
+                while(flag)
+                {
+                    //tcp прослушивание
+                    if (tcpIp.GetConnection())
+                    {
+                        strCon[1] = "Новое подключение...";
+                    }
+                    else
+                    {
+                        strCon[2] = "Ошибка подключения !!!";
+                        tcpIp.Close();
+                        break;
+                    }
+                    //получение имени файла и номера порта для udp
+                    if (tcpIp.ReadTcp(out message))
+                    {
+                        try
+                        {
+                            filename = message.Substring(0, message.IndexOf(":"));
+                            tcpIp.port_udp = Convert.ToInt32(message.Substring(message.IndexOf(":") + 1, message.Length - message.IndexOf(":") - 1));
+                            flagConnection = true;
+                            strCon[2] = "Имя файла и данные о UDP подключении получены...";
+
+                        }
+                        catch
+                        {
+                            strCon[2] = "Ошибка: Данные о UDP подключении переданны не верно !!!";
+                            tcpIp.Close();
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        strCon[2] = "Ошибка: Отсутствует соединение !!!";
+                        tcpIp.Close();
+                        break;
+                    }
+                    ////создание директории
+                    //FileWork fileWork = new FileWork();
+                    //if (fileWork.CreateDir(temp))
+                    //{
+                    //    Console.WriteLine("Директория создана...");
+                    //}
+                    //else
+                    //{
+                    //    Close("Директория не может быть создана по указанному пути", tcpIp);
+                    //    break;
+                    //}
+                    ////создание файла
+                    //if (fileWork.CreateFile(temp, filename))
+                    //{
+                    //    Console.WriteLine("Файл создан...");
+                    //}
+                    //else
+                    //{
+                    //    Close("Файл не может быть создан по указанному пути", tcpIp);
+                    //    break;
+                    //}
+
+                    //получение сообщения по UDP
+                    message = "";
+                    while(flagConnection)
+                    {
+                        tcpIp.ReadUdp(out message);
+                        if (message != "")
+                        {
+                            if (message == "exit")
+                            {
+                                flagConnection = false;
+
+                            }
+                            else
+                            {
+                                strCon[3] = message;                              
+                            }
+                            message = "";
+                            //отправляем сообщение о получении сообщения
+                            if (tcpIp.SendMessageTcp("ok"))
+                            {
+                                strCon[2] = "Подтверждение отправленно...";
+                            }
+                        }
+                    }
+                    strCon[1] = "Клиент отключился...";
+                    strCon[2] = "";
+                    tcpIp.Close();
+                }
+            });
+        }
+
+        static async void ConsoleUpdate()
+        {
+            bool flagCon = true;
+            string[] strConBuf = new string[strCon.Length];
+            await Task.Run(async () =>
+            {
+                while (flag)
+                {
+                    for(int i = 0; i < strCon.Length; i++)
+                    {
+                        if (strConBuf[i] != strCon[i])
+                        {
+                            flagCon = true;
+                            break;
+                        }
+                    }
+                    if (flagCon)
+                    {
+                        flagCon = false;
+                        Console.Clear();
+                        for(int i = 0; i < strCon.Length; i++)
+                        {
+                            strConBuf[i] = strCon[i];
+                            Console.WriteLine(strCon[i]);
+                        }
+                    }
+                }
+            });
         }
     }
 }

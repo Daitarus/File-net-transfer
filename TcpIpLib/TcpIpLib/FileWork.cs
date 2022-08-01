@@ -9,16 +9,6 @@ namespace TcpIpLib
 {
     public class FileWork
     {
-        private string fileName;
-        private string temp;
-
-        public FileWork() { }
-        public FileWork(string _temp, string _fileName)
-        {
-            this.temp = _temp;
-            this.fileName = _fileName;
-        }
-
         public bool CreateDir(string _temp)
         {
             string[] subtemps = _temp.Split(new char[] {'\\'});
@@ -43,18 +33,6 @@ namespace TcpIpLib
                 return false;
             }
         }
-        public bool CreateFile()
-        {
-            try
-            {
-                File.Create(temp + fileName);
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
         public bool CreateFile(string _temp, string _fileName)
         {
             try
@@ -65,6 +43,23 @@ namespace TcpIpLib
             catch
             {
                 return false;
+            }
+        }
+        public byte[] ReadFile(string _fileName)
+        {
+            byte[] buffer;
+            try
+            {
+                using (FileStream fstream = File.OpenRead(_fileName))
+                {
+                    buffer = new byte[fstream.Length];
+                    fstream.ReadAsync(buffer, 0, buffer.Length);
+                    return buffer;
+                }
+            }
+            catch
+            {
+                return buffer = new byte[0];
             }
         }
     }

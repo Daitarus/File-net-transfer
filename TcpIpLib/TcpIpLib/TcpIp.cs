@@ -2,30 +2,33 @@
 using System.Net.Sockets;
 using System.Net;
 using System.Text;
+using System.Net.NetworkInformation;
 
 namespace TcpIpLib
 {
     public class TcpIp
     {
-        public IPAddress ip = IPAddress.Parse("127.0.0.1");
+        public IPAddress ip;
         public int port_tcp;
         public int port_udp;
 
         private int mtu = 256;
 
         private TcpClient tcpClient;
-        private TcpListener tcpServer;
         private NetworkStream tcpStream;
-
 
         public bool GetConnection()
         {
-            tcpServer = new TcpListener(ip, port_tcp);
+            TcpListener tcpServer = new TcpListener(ip, port_tcp);
             try
             {
                 tcpServer.Start();
                 tcpClient = tcpServer.AcceptTcpClient();
                 tcpStream = tcpClient.GetStream();
+                if (tcpServer != null)
+                {
+                    tcpServer.Stop();
+                }
                 return true;
             }
             catch
@@ -125,11 +128,7 @@ namespace TcpIpLib
                 if (tcpStream != null)
                 {
                     tcpStream.Close();
-                }
-                if (tcpServer != null)
-                {
-                    tcpServer.Stop();
-                }
+                }                
                 return true;
             }
             catch
