@@ -94,16 +94,6 @@ namespace Client
                 Task.WaitAll(sendMess);
             }
             //завершение передачи
-            flag = true;
-            answer = "";
-            sendMess = SendMess(Encoding.UTF8.GetBytes("exit"), time, tcpIp);
-            if (tcpIp.ReadTcp(out answer))
-            {
-                if (answer == "ok")
-                {
-                    flag = false;
-                }
-            }
             Console.WriteLine("Передача завершена...");
             Console.WriteLine("Работа завершена !");
             //конец работы клиента

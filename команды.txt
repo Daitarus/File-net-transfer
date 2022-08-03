@@ -1,4 +1,0 @@
-D:\My Project\NetWork\z1\Server\Server\bin\Debug\net6.0
-D:\My Project\NetWork\z1\Client\Client\bin\Debug\net6.0
-Server.exe 127.0.0.1 4000 sdf
-Client.exe 127.0.0.1 4000 5000 fgf 500
