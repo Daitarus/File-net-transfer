@@ -8,18 +8,18 @@ namespace Client
 {
     public class Program
     {
-        static bool flagConUp = true;
         static bool flag = false;
-        static string[] strCon = new string[4];
 
         static int Main(string[] args)
         {
-            args = new string[5];
-            args[0] = "127.0.0.1";
-            args[1] = "4000";
-            args[2] = "5000";
-            args[3] = "test.txt";
-            args[4] = "1000";
+            //для дебага
+            //args = new string[5];
+            //args[0] = "127.0.0.1";
+            //args[1] = "4000";
+            //args[2] = "5000";
+            //args[3] = "Client1.exe";
+            //args[4] = "1000";
+
             //проверка параметров
             if (args.Length != 5)
             {
@@ -43,42 +43,47 @@ namespace Client
             }
             //проверка и считывание файла
             FileWork fileWork = new FileWork();
-            byte[] FileText = fileWork.ReadFile(filename);
+            byte[] fileText = fileWork.ReadFile(filename);
+            if(fileText == null)
+            {
+                Console.WriteLine("Ошибка: Файл не был прочитан !!!");
+                return -1;
+            }
+            byte[][] fileBlock = fileWork.SplitByte(tcpIp.mtu, fileText);
+
             //старт работы клиента
-            Task consoleUpdate = ConsoleUpdate();
             //подключение TCP
             if (tcpIp.Connection())
             {
-                strCon[0] = "Подключено...";
+                Console.WriteLine("Подключено...");
             }
             else
             {
-                strCon[0] = "Ошибка подключения !!!";
+                Console.WriteLine("Ошибка подключения !!!");
                 tcpIp.Close();
                 return -1;
             }
             //отправка имени файла и порта для udp
             if (tcpIp.SendMessageTcp($"{filename}:{tcpIp.port_udp}"))
             {
-                strCon[1] = "Имя файла и номер порта для UDP отправленны...";
+                Console.WriteLine("Имя файла и номер порта для UDP отправленны...");
             }
             else
             {
-                strCon[1] = "Ошибка: Имя файла и номер порта для UDP не отправленны, возможно отсутствует соединение !!!";
+                Console.WriteLine("Ошибка: Имя файла и номер порта для UDP не отправленны, возможно отсутствует соединение !!!");
                 tcpIp.Close();
                 return -1;
             }
 
             //udp
-            string answer; string message;
+            string answer;
             Task sendMess;
-            do
+            Console.WriteLine("Передача файла...");
+            for (int i=0;i<fileBlock.Length;i++)
             {
-                strCon[3] = "Введите сообщение: ";
-                message = Console.ReadLine();
                 flag = true;
                 answer = "";
-                sendMess = SendMess(message, time, tcpIp);
+                sendMess = SendMess(fileBlock[i], time, tcpIp);
                 if (tcpIp.ReadTcp(out answer))
                 {
                     if (answer == "ok")
@@ -87,66 +92,38 @@ namespace Client
                     }
                 }
                 Task.WaitAll(sendMess);
-            } while (message != "exit");
-
+            }
+            //завершение передачи
+            flag = true;
+            answer = "";
+            sendMess = SendMess(Encoding.UTF8.GetBytes("exit"), time, tcpIp);
+            if (tcpIp.ReadTcp(out answer))
+            {
+                if (answer == "ok")
+                {
+                    flag = false;
+                }
+            }
+            Console.WriteLine("Передача завершена...");
+            Console.WriteLine("Работа завершена !");
             //конец работы клиента
             tcpIp.Close();
-            strCon[0] = "Отключено...";
-            strCon[1] = "Передача завершена...";
-            strCon[2] = "";
-            strCon[3] = "Конец работы программы!";
-            flagConUp = false;
-            Task.WhenAll(consoleUpdate);
             return 0;
         }
 
-        static async Task SendMess(string message, int time, TcpIp tcpIp)
+        static async Task SendMess(byte[] message, int time, TcpIp tcpIp)
         {
             await Task.Run(async () =>
             {
                 while (flag)
                 {
                     //отправка сообщения udp
-                    if (tcpIp.SendMessageUdp(message))
+                    if (!tcpIp.SendMessageUdp(message))
                     {
-                        strCon[2] = $"Сообщение {message} отправленно...";
-                    }
-                    else
-                    {
-                        strCon[2] = "Ошибка: Отсутствует соединение !!!";
+                        Console.WriteLine("Ошибка: Отсутствует соединение !!!");
                         flag = false;
                     }
                     Thread.Sleep(time);
-                }
-            });
-        }
-
-        static async Task ConsoleUpdate()
-        {
-            bool flagCon = true;
-            string[] strConBuf = new string[strCon.Length];
-            await Task.Run(async () =>
-            {
-                while (flagConUp)
-                {
-                    for (int i = 0; i < strCon.Length; i++)
-                    {
-                        if (strConBuf[i] != strCon[i])
-                        {
-                            flagCon = true;
-                            break;
-                        }
-                    }
-                    if (flagCon)
-                    {
-                        flagCon = false;
-                        Console.Clear();
-                        for (int i = 0; i < strCon.Length; i++)
-                        {
-                            strConBuf[i] = strCon[i];
-                            Console.WriteLine(strCon[i]);
-                        }
-                    }
                 }
             });
         }

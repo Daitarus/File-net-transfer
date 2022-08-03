@@ -12,11 +12,12 @@ namespace TcpIpLib
         public int port_tcp;
         public int port_udp;
 
-        private int mtu = 256;
+        public int mtu = 64511;
 
         private TcpClient tcpClient;
         private NetworkStream tcpStream;
 
+        //ожидание tcp подключения
         public bool GetConnection()
         {
             TcpListener tcpServer = new TcpListener(ip, port_tcp);
@@ -36,6 +37,7 @@ namespace TcpIpLib
                 return false;
             }
         }
+        //tcp подключение
         public bool Connection()
         {
             tcpClient = new TcpClient();
@@ -50,6 +52,8 @@ namespace TcpIpLib
                 return false;
             }
         }
+
+        //чтение информации, преданного по tcp
         public bool ReadTcp(out string str)
         {
             StringBuilder message = new StringBuilder();
@@ -72,6 +76,7 @@ namespace TcpIpLib
                 return false;
             }
         }
+        //отправка информации по tcp
         public bool SendMessageTcp(string str)
         {
             try
@@ -85,6 +90,8 @@ namespace TcpIpLib
                 return false;
             }
         }
+        
+        //чтение информации, полученной по udp и конвертация в string
         public bool ReadUdp(out string str)
         {
             UdpClient udpClient = new UdpClient(port_udp);
@@ -102,6 +109,24 @@ namespace TcpIpLib
                 return false;
             }
         }
+        //чтение информации, полученной по udp
+        public bool ReadUdp(out byte[] buffer)
+        {
+            UdpClient udpClient = new UdpClient(port_udp);
+            IPEndPoint ipPoint = null;
+            try
+            {
+                buffer = udpClient.Receive(ref ipPoint);
+                udpClient.Close();
+                return true;
+            }
+            catch
+            {
+                buffer = null;
+                return false;
+            }
+        }
+        //отправка информации в string по udp 
         public bool SendMessageUdp(string str)
         {
             try
@@ -117,6 +142,23 @@ namespace TcpIpLib
                 return false;
             }
         }
+        //отправка информации по udp
+        public bool SendMessageUdp(byte[] buffer)
+        {
+            try
+            {
+                UdpClient udpClient = new UdpClient();
+                udpClient.Send(buffer, buffer.Length, ip.ToString(), port_udp);
+                udpClient.Close();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        
+        //закрытие tcp клиента и потока
         public bool Close()
         {
             try

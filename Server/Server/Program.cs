@@ -14,10 +14,12 @@ namespace Server
 
         static int Main(string[] args)
         {
-            args = new string[3];
-            args[0] = "127.0.0.1";
-            args[1] = "4000";
-            args[2] = @"Data\Files\";
+            //для дебага
+            //args = new string[3];
+            //args[0] = "127.0.0.1";
+            //args[1] = "4000";
+            //args[2] = @"Data\Files\";
+
             //проверка параметров
             if (args.Length != 3)
             {
@@ -30,7 +32,6 @@ namespace Server
             {
                 tcpIp.ip = IPAddress.Parse(args[0]);
                 tcpIp.port_tcp = Convert.ToInt32(args[1]);
-                //temp = args[2];
             }
             catch
             {
@@ -40,7 +41,7 @@ namespace Server
             //старт работы сервера
             ConsoleUpdate();
             strCon[0] = "Сервер запущен...";
-            NetWork();
+            NetWork(args[2]);
             //команда на завершение работы
             string com = "";
             while (com!="exit")
@@ -61,9 +62,13 @@ namespace Server
             return 0;
         }      
        
-        static async void NetWork()
+        static async void NetWork(string temp)
         {
-            string message, filename;
+            string message, filename; 
+            byte[] textMess; 
+            int num = 0; int counter = 0; 
+            byte[][] textBlock=new byte[1][];
+            FileWork fileWork = new FileWork();
             bool flagConnection = false;
             await Task.Run(async () =>
             {
@@ -104,59 +109,57 @@ namespace Server
                         tcpIp.Close();
                         break;
                     }
-                    ////создание директории
-                    //FileWork fileWork = new FileWork();
-                    //if (fileWork.CreateDir(temp))
-                    //{
-                    //    Console.WriteLine("Директория создана...");
-                    //}
-                    //else
-                    //{
-                    //    Close("Директория не может быть создана по указанному пути", tcpIp);
-                    //    break;
-                    //}
-                    ////создание файла
-                    //if (fileWork.CreateFile(temp, filename))
-                    //{
-                    //    Console.WriteLine("Файл создан...");
-                    //}
-                    //else
-                    //{
-                    //    Close("Файл не может быть создан по указанному пути", tcpIp);
-                    //    break;
-                    //}
 
                     //получение сообщения по UDP
-                    message = "";
-                    while(flagConnection)
+                    textMess = null; num = 1; counter = 0;
+                    while (counter < num)
                     {
-                        tcpIp.ReadUdp(out message);
-                        if (message != "")
+                        tcpIp.ReadUdp(out textMess);
+                        if (textMess != null)
                         {
-                            if (message == "exit")
+                            if (num == 1)
                             {
-                                flagConnection = false;
-
+                                //получение колличества датаграмм из первой
+                                num = (int)textMess[1];
+                                textBlock = new byte[num][];
                             }
-                            else
-                            {
-                                strCon[3] = message;                              
-                            }
-                            message = "";
+                            textBlock[counter] = textMess;
                             //отправляем сообщение о получении сообщения
-                            if (tcpIp.SendMessageTcp("ok"))
-                            {
-                                strCon[2] = "Подтверждение отправленно...";
-                            }
+                            tcpIp.SendMessageTcp("ok");
+                            counter++;
+                            strCon[3] = $"Полученно данных {counter}/{num} ...";
                         }
                     }
+                    //формирование единого текста и удаление служебной информации
+                    textMess = fileWork.UnionBlock(textBlock);
+                    //создание и запись файла
+                    //создание директории
+                    if (fileWork.CreateDir(temp))
+                    {
+                        strCon[2] = "Директория создана...";
+                    }
+                    else
+                    {
+                        strCon[2] = "Ошибка: Директория не может быть создана по указанному пути !!!";
+                        break;
+                    }
+                    //создание файла
+                    if (fileWork.WriteFile(temp, filename, textMess))
+                    {
+                        strCon[2] = "Файл создан...";
+                    }
+                    else
+                    {
+                        strCon[2] = "Ошибка: Файл не может быть создан по указанному пути !!!";
+                        break;
+                    }
                     strCon[1] = "Клиент отключился...";
-                    strCon[2] = "";
                     tcpIp.Close();
                 }
             });
         }
 
+        //обновление текста консоли
         static async void ConsoleUpdate()
         {
             bool flagCon = true;
@@ -165,6 +168,7 @@ namespace Server
             {
                 while (flag)
                 {
+                    //проверка на отличие от текущего
                     for(int i = 0; i < strCon.Length; i++)
                     {
                         if (strConBuf[i] != strCon[i])
@@ -173,6 +177,7 @@ namespace Server
                             break;
                         }
                     }
+                    //обновление текста
                     if (flagCon)
                     {
                         flagCon = false;
